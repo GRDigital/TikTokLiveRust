@@ -29,9 +29,9 @@ async fn main() {
     let path = Path::new(PROTO_OUTPUT_PATH);
     fs::create_dir_all(path).unwrap();
 
-    let names = ["data", "enums", "webcast"];
-    handle_download_proto_files(names).await;
-    handle_generating_proto(names);
+    let names = ["enums", "webcast"];
+    handle_download_proto_files(&names).await;
+    handle_generating_proto(&names);
 
     let event_models = get_event_data_models();
 
@@ -40,30 +40,29 @@ async fn main() {
     generate_mapper_class(&event_models);
 }
 
-async fn handle_download_proto_files(names: [&str; 3]) {
-    let base_url =
-        "https://raw.githubusercontent.com/jwdeveloper/TikTokLiveJava/master/API/src/main/proto/";
+async fn handle_download_proto_files(names: &[&str]) {
+    let base_url = "https://raw.githubusercontent.com/isaackogan/TikTokLive/master/scripts/proto/src";
+
     let client = Client::builder()
+		.proxy(reqwest::Proxy::all("http://localhost:8080").unwrap())
         .timeout(Duration::from_secs(3))
         .build()
         .unwrap();
 
-    let urls: HashMap<String, String> = names
-        .into_iter()
-        .map(|u| (u.to_string(), base_url.to_owned() + ".proto"))
-        .collect();
+    // let urls: HashMap<String, String> = names
+    //     .map(|u| (u.to_string(), base_url.to_owned() + ".proto"))
+    //     .collect();
 
-    for url in urls {
-        let proto_url = url.1;
-        let proto_name = PROTO_OUTPUT_PATH.to_string() + &*url.0 + ".proto";
+    for name in names {
+        let proto_name = format!("{PROTO_OUTPUT_PATH}/{name}.proto");
 
-        let content = handle_file_download(&proto_url, &client).await;
+        let content = handle_file_download(&format!("{base_url}/{name}.proto"), &client).await;
         let mut file = File::create(proto_name).unwrap();
         file.write_all(content.as_bytes()).unwrap();
     }
 }
 
-fn handle_generating_proto(names: [&str; 3]) {
+fn handle_generating_proto(names: &[&str]) {
     let mut builder = &mut Codegen::new();
     builder = builder
         .protoc()
@@ -76,7 +75,7 @@ fn handle_generating_proto(names: [&str; 3]) {
     builder.out_dir(CODE_OUTPUT_PATH).run_from_script();
 }
 
-async fn handle_file_download(url: &String, client: &Client) -> String {
+async fn handle_file_download(url: &str, client: &Client) -> String {
     let response = client.get(url).send().await.unwrap();
     if !response.status().is_success() {
         false;

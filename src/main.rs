@@ -1,3 +1,5 @@
+fn main() {}
+/*
 use env_logger::{Builder, Env}; // Importing the logger builder and environment configuration
 use log::LevelFilter; // Importing log level filter
 use log::{error, warn};
@@ -156,3 +158,4 @@ fn create_client_with_cookies(user_name: &str) -> TikTokLiveClient {
         .on_event(handle_event) // Set the event handler
         .build() // Build the client
 }
+*/
